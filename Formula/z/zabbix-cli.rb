@@ -3,13 +3,14 @@ class ZabbixCli < Formula
 
   desc "CLI tool for interacting with Zabbix monitoring system"
   homepage "https://unioslo.github.io/zabbix-cli/"
-  url "https://github.com/unioslo/zabbix-cli/archive/refs/tags/3.4.2.tar.gz"
-  sha256 "30a44797e38070b7b06e125ac55eb47ba1253dea6ab8cc390a4f3087aec26351"
+  url "https://files.pythonhosted.org/packages/bf/f7/966ab87074daf3d3d23f4ad5b1937432e8f1268a642d09c8712fafbbe23d/zabbix_cli_uio-3.4.2.tar.gz"
+  sha256 "e08e15cc57b0eed9b7eb34be5570433b4ac26052486ce3bf1c5feed34ecda3dc"
   license "GPL-3.0-or-later"
   head "https://github.com/unioslo/zabbix-cli.git", branch: "master"
 
+  # TODO: Remove livecheck once upstream finalizes PyPI package name
   livecheck do
-    url :stable
+    url :head
     regex(/^v?(\d+(?:\.\d+)+)$/i)
   end
 
@@ -159,6 +160,19 @@ class ZabbixCli < Formula
 
   def install
     virtualenv_install_with_resources
+
+    # Fake a login shell for shellingham.detect_shell()
+    generate_completions_from_executable("/bin/bash", "--login", "-c",
+                                         "ps -ww -o pid= -o ppid= -o args=; #{bin}/zabbix-cli --show-completion",
+                                         shell_parameter_format: "-")
+
+    # TESTING - Remove
+    system "bash -c 'source #{bash_completion}/zabbix-cli && complete -p zabbix-cli'"
+    system "zsh -c 'fpath=(#{zsh_completion} $fpath); autoload _zabbix-cli; which _zabbix-cli'" if OS.mac?
+    system "cat", "#{bash_completion}/zabbix-cli"
+    system "cat", "#{zsh_completion}/_zabbix-cli"
+    system "cat", "#{fish_completion}/zabbix-cli.fish"
+    odie "TESTING"
   end
 
   test do
